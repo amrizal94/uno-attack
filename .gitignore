@@ -1,0 +1,9 @@
+# Ignore semua file
+*
+
+# Jangan ignore file .gitignore itu sendiri
+!.gitignore
+
+# Jangan ignore file yang kamu mau track, misalnya:
+!index.html
+!README.md

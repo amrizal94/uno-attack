@@ -76,6 +76,12 @@
     const machine = document.getElementById("machine");
     const message = document.getElementById("message");
 
+    function speak(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'id-ID'; // Bahasa Indonesia
+      speechSynthesis.speak(utterance);
+    }
+
     function drawCard() {
       const count = Math.floor(Math.random() * 9);
       message.textContent = "";
@@ -94,7 +100,15 @@
         message.textContent = msg;
         message.style.color = "red";
         machine.style.boxShadow = "0 0 30px red";
+        speak(msg);
       } else {
+        const voiceLines = [
+          `Wah, ${count} kartu keluar!`,
+          `${count} kartu? Siap-siap!`,
+          `Ambil ${count} kartu ya!`,
+          `${count} kartu serbu kamu!`,
+          `Kartu keluar ${count} biji!`,
+        ];
         for (let i = 0; i < count; i++) {
           const card = document.createElement("div");
           card.className = "card";
@@ -102,9 +116,11 @@
           card.style.animationDelay = `${i * 0.2}s`;
           machine.appendChild(card);
         }
-        message.textContent = `${count} Kartu keluar!`;
+        const msg = voiceLines[Math.floor(Math.random() * voiceLines.length)];
+        message.textContent = msg;
         message.style.color = "gold";
         machine.style.boxShadow = "0 0 20px black";
+        speak(msg);
       }
     }
   </script>
