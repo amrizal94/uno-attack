@@ -92,7 +92,7 @@
     const machine = document.getElementById("machine");
     const message = document.getElementById("message");
 
-    function speak(text, callback) {
+    function speak(text) {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'id-ID';
       const voices = speechSynthesis.getVoices();
@@ -102,7 +102,6 @@
       } else if (voices.length > 0) {
         utterance.voice = voices[Math.floor(Math.random() * voices.length)];
       }
-      utterance.onend = callback;
       speechSynthesis.speak(utterance);
     }
 
@@ -115,57 +114,37 @@
       message.textContent = "";
       machine.innerHTML = "";
 
-      // Tampilkan animasi shuffle selama suara disiapkan dan diputar
+      // Tampilkan animasi shuffle sebentar
       const shuffle = document.createElement("div");
       shuffle.className = "shuffle";
       machine.appendChild(shuffle);
 
       setTimeout(() => {
-        const showCards = () => {
-          shuffle.remove();
-          if (count === 0) {
-            const messages = [
-              "Lucky!",
-              "Zonk Tapi Keren!",
-              "Selamat!",
-              "Dewa Kartu!",
-              "Free Pass!",
-              "Kamu Beruntung!",
-            ];
-            const msg = messages[Math.floor(Math.random() * messages.length)];
-            message.textContent = msg;
-            message.style.color = "red";
-            machine.style.boxShadow = "0 0 30px red";
-          } else {
-            const voiceLines = [
-              `Wah, ${count} kartu keluar!`,
-              `${count} kartu? Siap-siap!`,
-              `Ambil ${count} kartu ya!`,
-              `${count} kartu serbu kamu!`,
-              `Kartu keluar ${count} biji!`,
-              `Siapa takut ${count} kartu!`,
-              `Gas terus, ${count} kartu nih!`,
-              `Tahan napas, ${count} kartu dikeluarin!`,
-            ];
-            for (let i = 0; i < count; i++) {
-              const card = document.createElement("div");
-              card.className = "card";
-              card.style.left = 80 + Math.random() * 40 - 20 + "px";
-              card.style.animationDelay = `${i * 0.2}s`;
-              machine.appendChild(card);
-            }
-            const msg = voiceLines[Math.floor(Math.random() * voiceLines.length)];
-            message.textContent = msg;
-            message.style.color = "gold";
-            machine.style.boxShadow = "0 0 20px black";
-          }
-        };
+        shuffle.remove();
 
         const msg = count === 0 ?
           ["Lucky!","Zonk Tapi Keren!","Selamat!","Dewa Kartu!","Free Pass!","Kamu Beruntung!"][Math.floor(Math.random() * 6)] :
           [`Wah, ${count} kartu keluar!`,`Ambil ${count} kartu ya!`,`Tahan napas, ${count} kartu dikeluarin!`][Math.floor(Math.random() * 3)];
 
-        speak(msg, showCards);
+        speak(msg);
+
+        if (count === 0) {
+          message.textContent = msg;
+          message.style.color = "red";
+          machine.style.boxShadow = "0 0 30px red";
+        } else {
+          message.textContent = msg;
+          message.style.color = "gold";
+          machine.style.boxShadow = "0 0 20px black";
+
+          for (let i = 0; i < count; i++) {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.style.left = 80 + Math.random() * 40 - 20 + "px";
+            card.style.animationDelay = `${i * 0.2}s`;
+            machine.appendChild(card);
+          }
+        }
       }, 500);
     }
   </script>
