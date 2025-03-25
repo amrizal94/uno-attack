@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Uno Attack Simulator</title>
   <style>
+    html, body {
+      height: 100%;
+    }
     body {
       background: linear-gradient(#222, #444);
       color: white;
@@ -12,17 +15,23 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      height: 100vh;
+      justify-content: flex-start;
+      min-height: 100vh;
       margin: 0;
-      overflow: hidden;
+      padding: 10px;
+      overflow-y: auto;
+      text-align: center;
     }
     h1 {
+      margin-top: 20px;
       margin-bottom: 20px;
+      font-size: 6vw;
     }
     #machine {
-      width: 200px;
-      height: 150px;
+      width: 80vw;
+      max-width: 300px;
+      height: 40vw;
+      max-height: 200px;
       background: darkred;
       border-radius: 20px;
       position: relative;
@@ -30,8 +39,10 @@
       overflow: hidden;
     }
     .card {
-      width: 40px;
-      height: 60px;
+      width: 10vw;
+      max-width: 40px;
+      height: 15vw;
+      max-height: 60px;
       background: yellow;
       border-radius: 5px;
       position: absolute;
@@ -47,8 +58,10 @@
       100% { transform: translateY(-150px); opacity: 0; }
     }
     .shuffle {
-      width: 20px;
-      height: 30px;
+      width: 5vw;
+      height: 8vw;
+      max-width: 20px;
+      max-height: 30px;
       background: orange;
       position: absolute;
       top: 60px;
@@ -63,14 +76,14 @@
     }
     #message {
       margin-top: 20px;
-      font-size: 24px;
+      font-size: clamp(16px, 4vw, 24px);
       color: gold;
-      height: 30px;
+      min-height: 30px;
     }
     button {
       margin-top: 20px;
       padding: 10px 20px;
-      font-size: 18px;
+      font-size: clamp(16px, 4vw, 24px);
       border: none;
       background: orange;
       border-radius: 10px;
@@ -80,72 +93,159 @@
     button:hover {
       background: orangered;
     }
+    #nospeech {
+      margin-top: 10px;
+      font-size: clamp(12px, 3vw, 18px);
+      color: tomato;
+    }
   </style>
 </head>
 <body>
-  <h1>UNO Attack - Software Version</h1>
+  <h1>UNO Attack</h1>
   <div id="machine"></div>
   <div id="message"></div>
-  <button onclick="drawCard()">Ambil Kartu</button>
+  <button id="draw-button" onclick="drawCard()">Ambil Kartu</button>
+  <div id="nospeech" style="display:none">*Suara tidak didukung di browser ini</div>
+  <audio id="fallback-audio" preload="auto"></audio>
 
   <script>
     const machine = document.getElementById("machine");
     const message = document.getElementById("message");
+    const nospeech = document.getElementById("nospeech");
+    const fallbackAudio = document.getElementById("fallback-audio");
 
-    function speak(text) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'id-ID';
+    const audioMap = {
+      "Lucky!": "audio/lucky.mp3",
+      "Zonk Tapi Keren!": "audio/zonk.mp3",
+      "Selamat!": "audio/selamat.mp3",
+      "Dewa Kartu!": "audio/dewa.mp3",
+      "Free Pass!": "audio/free.mp3",
+      "Kamu Beruntung!": "audio/beruntung.mp3",
+      "Wah, 1 kartu keluar!": "audio/wah1.mp3",
+      "Wah, 2 kartu keluar!": "audio/wah2.mp3",
+      "Wah, 3 kartu keluar!": "audio/wah3.mp3",
+      "Wah, 4 kartu keluar!": "audio/wah4.mp3",
+      "Wah, 5 kartu keluar!": "audio/wah5.mp3",
+      "Wah, 6 kartu keluar!": "audio/wah6.mp3",
+      "Wah, 7 kartu keluar!": "audio/wah7.mp3",
+      "Wah, 8 kartu keluar!": "audio/wah8.mp3",
+      "Ambil 1 kartu ya!": "audio/ambil1.mp3",
+      "Ambil 2 kartu ya!": "audio/ambil2.mp3",
+      "Ambil 3 kartu ya!": "audio/ambil3.mp3",
+      "Ambil 4 kartu ya!": "audio/ambil4.mp3",
+      "Ambil 5 kartu ya!": "audio/ambil5.mp3",
+      "Ambil 6 kartu ya!": "audio/ambil6.mp3",
+      "Ambil 7 kartu ya!": "audio/ambil7.mp3",
+      "Ambil 8 kartu ya!": "audio/ambil8.mp3",
+      "Tahan napas, 1 kartu dikeluarin!": "audio/tahan1.mp3",
+      "Tahan napas, 2 kartu dikeluarin!": "audio/tahan2.mp3",
+      "Tahan napas, 3 kartu dikeluarin!": "audio/tahan3.mp3",
+      "Tahan napas, 4 kartu dikeluarin!": "audio/tahan4.mp3",
+      "Tahan napas, 5 kartu dikeluarin!": "audio/tahan5.mp3",
+      "Tahan napas, 6 kartu dikeluarin!": "audio/tahan6.mp3",
+      "Tahan napas, 7 kartu dikeluarin!": "audio/tahan7.mp3",
+      "Tahan napas, 8 kartu dikeluarin!": "audio/tahan8.mp3",
+    };
+
+    function speakWithFallback(text, cardCount = 0) {
+      const audioUrl = audioMap[text];
+      const isMobile = /Mobi|Android/i.test(navigator.userAgent);
       const voices = speechSynthesis.getVoices();
-      const indoVoices = voices.filter(v => v.lang === 'id-ID');
-      if (indoVoices.length > 0) {
-        utterance.voice = indoVoices[Math.floor(Math.random() * indoVoices.length)];
-      } else if (voices.length > 0) {
-        utterance.voice = voices[Math.floor(Math.random() * voices.length)];
+
+      const removeShuffle = () => {
+        const loading = document.getElementById("shuffle-loading");
+        if (loading) loading.remove();
+      };
+
+      message.textContent = text;
+
+      if (!isMobile && 'speechSynthesis' in window && voices.length > 0) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'id-ID';
+        const indoVoices = voices.filter(v => v.lang === 'id-ID');
+        utterance.voice = indoVoices.length ? indoVoices[Math.floor(Math.random() * indoVoices.length)] : voices[0];
+        
+        utterance.onend = () => { message.textContent = ""; };
+        utterance.onstart = () => {
+        removeShuffle();
+        if (cardCount > 0) {
+          showCards(cardCount);
+        }
+      };
+        speechSynthesis.speak(utterance);
+      } else if (audioUrl) {
+        fallbackAudio.pause();
+        fallbackAudio.currentTime = 0;
+        fallbackAudio.src = audioUrl;
+        fallbackAudio.onplay = () => {
+          removeShuffle();
+          if (cardCount > 0) showCards(cardCount);
+        };
+        fallbackAudio.onended = () => {
+          fallbackAudio.src = "";
+          message.textContent = "";
+        };
+        fallbackAudio.play().catch(err => {
+          console.warn("Play error:", err);
+          nospeech.style.display = "block";
+        });
+      } else {
+        removeShuffle();
+        nospeech.style.display = "block";
       }
-      speechSynthesis.speak(utterance);
     }
 
     if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
-      speechSynthesis.onvoiceschanged = () => {};
+      speechSynthesis.onvoiceschanged = () => {
+        nospeech.style.display = 'none';
+      };
     }
 
     function drawCard() {
+      const button = document.getElementById("draw-button");
+      button.disabled = true; // Disable the button
       const count = Math.floor(Math.random() * 9);
       message.textContent = "";
       machine.innerHTML = "";
+      nospeech.style.display = "none";
 
-      // Tampilkan animasi shuffle sebentar
       const shuffle = document.createElement("div");
       shuffle.className = "shuffle";
+      shuffle.id = "shuffle-loading";
       machine.appendChild(shuffle);
 
-      setTimeout(() => {
-        shuffle.remove();
+      const msg = count === 0 ?
+        ["Lucky!","Zonk Tapi Keren!","Selamat!","Dewa Kartu!","Free Pass!","Kamu Beruntung!"][Math.floor(Math.random() * 6)] :
+        [`Wah, ${count} kartu keluar!`,`Ambil ${count} kartu ya!`,`Tahan napas, ${count} kartu dikeluarin!`][Math.floor(Math.random() * 3)];
 
-        const msg = count === 0 ?
-          ["Lucky!","Zonk Tapi Keren!","Selamat!","Dewa Kartu!","Free Pass!","Kamu Beruntung!"][Math.floor(Math.random() * 6)] :
-          [`Wah, ${count} kartu keluar!`,`Ambil ${count} kartu ya!`,`Tahan napas, ${count} kartu dikeluarin!`][Math.floor(Math.random() * 3)];
+      speakWithFallback(msg, count);
 
-        speak(msg);
+      if (count === 0) {
+        message.style.color = "red";
+        machine.style.boxShadow = "0 0 30px red";
+      } else {
+        message.style.color = "gold";
+        machine.style.boxShadow = "0 0 20px black";
+      }
 
-        if (count === 0) {
-          message.textContent = msg;
-          message.style.color = "red";
-          machine.style.boxShadow = "0 0 30px red";
-        } else {
-          message.textContent = msg;
-          message.style.color = "gold";
-          machine.style.boxShadow = "0 0 20px black";
-
-          for (let i = 0; i < count; i++) {
-            const card = document.createElement("div");
-            card.className = "card";
-            card.style.left = 80 + Math.random() * 40 - 20 + "px";
-            card.style.animationDelay = `${i * 0.2}s`;
-            machine.appendChild(card);
-          }
+      // Re-enable the button after the message is cleared
+      const observer = new MutationObserver(() => {
+        if (message.textContent === "") {
+          button.disabled = false;
+          observer.disconnect();
         }
-      }, 500);
+      });
+      observer.observe(message, { childList: true });
+    }
+
+    function showCards(count) {
+      for (let i = 0; i < count; i++) {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.style.left = 80 + Math.random() * 40 - 20 + "px";
+        card.style.animationDelay = `${i * 0.2}s`;
+        machine.appendChild(card);
+      }
     }
   </script>
 </body>
