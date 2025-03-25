@@ -78,8 +78,29 @@
 
     function speak(text) {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'id-ID'; // Bahasa Indonesia
+      utterance.lang = 'id-ID';
+
+      // Ambil semua voice yang tersedia
+      const voices = speechSynthesis.getVoices();
+
+      // Filter untuk bahasa Indonesia
+      const indoVoices = voices.filter(v => v.lang === 'id-ID');
+
+      // Acak gender: cowok (index genap), cewek (index ganjil)
+      if (indoVoices.length > 0) {
+        const randomVoice = indoVoices[Math.floor(Math.random() * indoVoices.length)];
+        utterance.voice = randomVoice;
+      } else if (voices.length > 0) {
+        // fallback ke voice lain kalau tidak ada id-ID
+        utterance.voice = voices[Math.floor(Math.random() * voices.length)];
+      }
+
       speechSynthesis.speak(utterance);
+    }
+
+    // Force load voices on some browsers
+    if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = () => {};
     }
 
     function drawCard() {
@@ -108,6 +129,9 @@
           `Ambil ${count} kartu ya!`,
           `${count} kartu serbu kamu!`,
           `Kartu keluar ${count} biji!`,
+          `Siapa takut ${count} kartu!`,
+          `Gas terus, ${count} kartu nih!`,
+          `Tahan napas, ${count} kartu dikeluarin!`,
         ];
         for (let i = 0; i < count; i++) {
           const card = document.createElement("div");
