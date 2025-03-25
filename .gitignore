@@ -7,3 +7,4 @@
 # Jangan ignore file yang kamu mau track, misalnya:
 !index.html
 !README.md
+!audio
