@@ -27,6 +27,7 @@
       border-radius: 20px;
       position: relative;
       box-shadow: 0 0 20px black;
+      overflow: hidden;
     }
     .card {
       width: 40px;
@@ -44,6 +45,21 @@
       0% { transform: translateY(0); opacity: 0; }
       50% { transform: translateY(-60px); opacity: 1; }
       100% { transform: translateY(-150px); opacity: 0; }
+    }
+    .shuffle {
+      width: 20px;
+      height: 30px;
+      background: orange;
+      position: absolute;
+      top: 60px;
+      left: calc(50% - 10px);
+      animation: shuffle 0.5s infinite alternate;
+      opacity: 0.6;
+      border-radius: 3px;
+    }
+    @keyframes shuffle {
+      0% { transform: rotate(0deg) translateX(-10px); }
+      100% { transform: rotate(20deg) translateX(10px); }
     }
     #message {
       margin-top: 20px;
@@ -76,29 +92,20 @@
     const machine = document.getElementById("machine");
     const message = document.getElementById("message");
 
-    function speak(text) {
+    function speak(text, callback) {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'id-ID';
-
-      // Ambil semua voice yang tersedia
       const voices = speechSynthesis.getVoices();
-
-      // Filter untuk bahasa Indonesia
       const indoVoices = voices.filter(v => v.lang === 'id-ID');
-
-      // Acak gender: cowok (index genap), cewek (index ganjil)
       if (indoVoices.length > 0) {
-        const randomVoice = indoVoices[Math.floor(Math.random() * indoVoices.length)];
-        utterance.voice = randomVoice;
+        utterance.voice = indoVoices[Math.floor(Math.random() * indoVoices.length)];
       } else if (voices.length > 0) {
-        // fallback ke voice lain kalau tidak ada id-ID
         utterance.voice = voices[Math.floor(Math.random() * voices.length)];
       }
-
+      utterance.onend = callback;
       speechSynthesis.speak(utterance);
     }
 
-    // Force load voices on some browsers
     if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
       speechSynthesis.onvoiceschanged = () => {};
     }
@@ -108,44 +115,58 @@
       message.textContent = "";
       machine.innerHTML = "";
 
-      if (count === 0) {
-        const messages = [
-          "Lucky!",
-          "Zonk Tapi Keren!",
-          "Selamat!",
-          "Dewa Kartu!",
-          "Free Pass!",
-          "Kamu Beruntung!",
-        ];
-        const msg = messages[Math.floor(Math.random() * messages.length)];
-        message.textContent = msg;
-        message.style.color = "red";
-        machine.style.boxShadow = "0 0 30px red";
-        speak(msg);
-      } else {
-        const voiceLines = [
-          `Wah, ${count} kartu keluar!`,
-          `${count} kartu? Siap-siap!`,
-          `Ambil ${count} kartu ya!`,
-          `${count} kartu serbu kamu!`,
-          `Kartu keluar ${count} biji!`,
-          `Siapa takut ${count} kartu!`,
-          `Gas terus, ${count} kartu nih!`,
-          `Tahan napas, ${count} kartu dikeluarin!`,
-        ];
-        for (let i = 0; i < count; i++) {
-          const card = document.createElement("div");
-          card.className = "card";
-          card.style.left = 80 + Math.random() * 40 - 20 + "px";
-          card.style.animationDelay = `${i * 0.2}s`;
-          machine.appendChild(card);
-        }
-        const msg = voiceLines[Math.floor(Math.random() * voiceLines.length)];
-        message.textContent = msg;
-        message.style.color = "gold";
-        machine.style.boxShadow = "0 0 20px black";
-        speak(msg);
-      }
+      // Tampilkan animasi shuffle selama suara disiapkan dan diputar
+      const shuffle = document.createElement("div");
+      shuffle.className = "shuffle";
+      machine.appendChild(shuffle);
+
+      setTimeout(() => {
+        const showCards = () => {
+          shuffle.remove();
+          if (count === 0) {
+            const messages = [
+              "Lucky!",
+              "Zonk Tapi Keren!",
+              "Selamat!",
+              "Dewa Kartu!",
+              "Free Pass!",
+              "Kamu Beruntung!",
+            ];
+            const msg = messages[Math.floor(Math.random() * messages.length)];
+            message.textContent = msg;
+            message.style.color = "red";
+            machine.style.boxShadow = "0 0 30px red";
+          } else {
+            const voiceLines = [
+              `Wah, ${count} kartu keluar!`,
+              `${count} kartu? Siap-siap!`,
+              `Ambil ${count} kartu ya!`,
+              `${count} kartu serbu kamu!`,
+              `Kartu keluar ${count} biji!`,
+              `Siapa takut ${count} kartu!`,
+              `Gas terus, ${count} kartu nih!`,
+              `Tahan napas, ${count} kartu dikeluarin!`,
+            ];
+            for (let i = 0; i < count; i++) {
+              const card = document.createElement("div");
+              card.className = "card";
+              card.style.left = 80 + Math.random() * 40 - 20 + "px";
+              card.style.animationDelay = `${i * 0.2}s`;
+              machine.appendChild(card);
+            }
+            const msg = voiceLines[Math.floor(Math.random() * voiceLines.length)];
+            message.textContent = msg;
+            message.style.color = "gold";
+            machine.style.boxShadow = "0 0 20px black";
+          }
+        };
+
+        const msg = count === 0 ?
+          ["Lucky!","Zonk Tapi Keren!","Selamat!","Dewa Kartu!","Free Pass!","Kamu Beruntung!"][Math.floor(Math.random() * 6)] :
+          [`Wah, ${count} kartu keluar!`,`Ambil ${count} kartu ya!`,`Tahan napas, ${count} kartu dikeluarin!`][Math.floor(Math.random() * 3)];
+
+        speak(msg, showCards);
+      }, 500);
     }
   </script>
 </body>
